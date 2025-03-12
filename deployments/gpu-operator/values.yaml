@@ -78,20 +78,16 @@ operator:
   cleanupCRD: false
   # upgrade CRD on chart upgrade, requires --disable-openapi-validation flag
   # to be passed during helm upgrade.
-  upgradeCRD: true
+  upgradeCRD: false # TODO: check
   initContainer:
     image: cuda
     repository: registry.ddbuild.io/test/nvidia
     version: 12.8.0-base-ubi9
     imagePullPolicy: IfNotPresent
   tolerations:
-  - key: "node-role.kubernetes.io/master"
+  - key: "node"
     operator: "Equal"
-    value: ""
-    effect: "NoSchedule"
-  - key: "node-role.kubernetes.io/control-plane"
-    operator: "Equal"
-    value: ""
+    value: "nodeless"
     effect: "NoSchedule"
   annotations:
     openshift.io/scc: restricted-readonly
@@ -568,6 +564,11 @@ node-feature-discovery:
     serviceAccount:
       name: node-feature-discovery
       create: false
+    tolerations:
+      - key: "node"
+        operator: "Equal"
+        value: "nodeless"
+        effect: "NoSchedule"
   worker:
     nodeSelector:
       node.datadoghq.com/runtime: nvidia
@@ -577,17 +578,12 @@ node-feature-discovery:
       # disable creation to avoid duplicate serviceaccount creation by master spec below
       create: false
     tolerations:
-    - key: "node-role.kubernetes.io/master"
-      operator: "Equal"
-      value: ""
-      effect: "NoSchedule"
-    - key: "node-role.kubernetes.io/control-plane"
-      operator: "Equal"
-      value: ""
-      effect: "NoSchedule"
-    - key: nvidia.com/gpu
-      operator: Exists
-      effect: NoSchedule
+      - effect: NoSchedule
+        key: node
+        value: nodeless
+      - effect: NoSchedule
+        key: runtime
+        value: nvidia
     config:
       sources:
         pci:
@@ -609,3 +605,8 @@ node-feature-discovery:
       # resourceLabels: ["nvidia.com/feature-1","nvidia.com/feature-2"]
       # enableTaints: false
       # labelWhiteList: "nvidia.com/gpu"
+    tolerations:
+      - key: "node"
+        operator: "Equal"
+        value: "nodeless"
+        effect: "NoSchedule"
