@@ -35,7 +35,7 @@ rules:
   - update
   - patch
   - delete
-  - use
+  # - use
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:
