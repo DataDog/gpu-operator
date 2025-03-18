@@ -91,21 +91,6 @@ operator:
     effect: "NoSchedule"
   annotations:
     openshift.io/scc: restricted-readonly
-  affinity:
-    nodeAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 1
-          preference:
-            matchExpressions:
-              - key: "node-role.kubernetes.io/master"
-                operator: In
-                values: [""]
-        - weight: 1
-          preference:
-            matchExpressions:
-              - key: "node-role.kubernetes.io/control-plane"
-                operator: In
-                values: [""]
   logging:
     # Zap time encoding (one of 'epoch', 'millis', 'nano', 'iso8601', 'rfc3339' or 'rfc3339nano')
     timeEncoding: epoch
