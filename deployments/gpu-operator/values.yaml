@@ -50,7 +50,7 @@ daemonsets:
     maxUnavailable: "1"
 
 validator:
-  repository: nvcr.io/nvidia/cloud-native
+  repository: registry.ddbuild.io/test/nvidia/cloud-native
   image: gpu-operator-validator
   # If version is not specified, then default is to use chart.AppVersion
   #version: ""
@@ -65,7 +65,7 @@ validator:
         value: "false"
 
 operator:
-  repository: nvcr.io/nvidia
+  repository: registry.ddbuild.io/test/nvidia
   image: gpu-operator
   # If version is not specified, then default is to use chart.AppVersion
   #version: ""
@@ -78,38 +78,19 @@ operator:
   cleanupCRD: false
   # upgrade CRD on chart upgrade, requires --disable-openapi-validation flag
   # to be passed during helm upgrade.
-  upgradeCRD: true
+  upgradeCRD: false # TODO: check
   initContainer:
     image: cuda
-    repository: nvcr.io/nvidia
+    repository: registry.ddbuild.io/test/nvidia
     version: 12.8.0-base-ubi9
     imagePullPolicy: IfNotPresent
   tolerations:
-  - key: "node-role.kubernetes.io/master"
+  - key: "node"
     operator: "Equal"
-    value: ""
-    effect: "NoSchedule"
-  - key: "node-role.kubernetes.io/control-plane"
-    operator: "Equal"
-    value: ""
+    value: "nodeless"
     effect: "NoSchedule"
   annotations:
     openshift.io/scc: restricted-readonly
-  affinity:
-    nodeAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 1
-          preference:
-            matchExpressions:
-              - key: "node-role.kubernetes.io/master"
-                operator: In
-                values: [""]
-        - weight: 1
-          preference:
-            matchExpressions:
-              - key: "node-role.kubernetes.io/control-plane"
-                operator: In
-                values: [""]
   logging:
     # Zap time encoding (one of 'epoch', 'millis', 'nano', 'iso8601', 'rfc3339' or 'rfc3339nano')
     timeEncoding: epoch
@@ -144,7 +125,7 @@ driver:
   # use pre-compiled packages for NVIDIA driver installation.
   # only supported for as a tech-preview feature on ubuntu22.04 kernels.
   usePrecompiled: false
-  repository: nvcr.io/nvidia
+  repository: registry.ddbuild.io/test/nvidia
   image: driver
   version: "570.86.15"
   imagePullPolicy: IfNotPresent
@@ -193,7 +174,7 @@ driver:
       deleteEmptyDir: false
   manager:
     image: k8s-driver-manager
-    repository: nvcr.io/nvidia/cloud-native
+    repository: registry.ddbuild.io/test/nvidia/cloud-native
     # When choosing a different version of k8s-driver-manager, DO NOT downgrade to a version lower than v0.6.4
     # to ensure k8s-driver-manager stays compatible with gpu-operator starting from v24.3.0
     version: v0.8.0
@@ -232,7 +213,7 @@ driver:
 
 toolkit:
   enabled: true
-  repository: nvcr.io/nvidia/k8s
+  repository: registry.ddbuild.io/test/nvidia/k8s
   image: container-toolkit
   version: v1.17.4-ubuntu20.04
   imagePullPolicy: IfNotPresent
@@ -243,7 +224,7 @@ toolkit:
 
 devicePlugin:
   enabled: true
-  repository: nvcr.io/nvidia
+  repository: registry.ddbuild.io/test/nvidia
   image: k8s-device-plugin
   version: v0.17.0
   imagePullPolicy: IfNotPresent
@@ -301,7 +282,7 @@ devicePlugin:
 dcgm:
   # disabled by default to use embedded nv-hostengine by exporter
   enabled: false
-  repository: nvcr.io/nvidia/cloud-native
+  repository: registry.ddbuild.io/test/nvidia/cloud-native
   image: dcgm
   version: 4.1.1-1-ubuntu22.04
   imagePullPolicy: IfNotPresent
@@ -311,7 +292,7 @@ dcgm:
 
 dcgmExporter:
   enabled: true
-  repository: nvcr.io/nvidia/k8s
+  repository: registry.ddbuild.io/test/nvidia/k8s
   image: dcgm-exporter
   version: 4.1.1-4.0.4-ubuntu22.04
   imagePullPolicy: IfNotPresent
@@ -357,7 +338,7 @@ dcgmExporter:
       # DCGM_FI_DEV_MEM_CLOCK, gauge, Memory clock frequency (in MHz).
 gfd:
   enabled: true
-  repository: nvcr.io/nvidia
+  repository: registry.ddbuild.io/test/nvidia
   image: k8s-device-plugin
   version: v0.17.0
   imagePullPolicy: IfNotPresent
@@ -371,7 +352,7 @@ gfd:
 
 migManager:
   enabled: true
-  repository: nvcr.io/nvidia/cloud-native
+  repository: registry.ddbuild.io/test/nvidia/cloud-native
   image: k8s-mig-manager
   version: v0.11.0-ubuntu20.04
   imagePullPolicy: IfNotPresent
@@ -424,7 +405,7 @@ migManager:
 
 nodeStatusExporter:
   enabled: false
-  repository: nvcr.io/nvidia/cloud-native
+  repository: registry.ddbuild.io/test/nvidia/cloud-native
   image: gpu-operator-validator
   # If version is not specified, then default is to use chart.AppVersion
   #version: ""
@@ -434,7 +415,7 @@ nodeStatusExporter:
 
 gds:
   enabled: false
-  repository: nvcr.io/nvidia/cloud-native
+  repository: registry.ddbuild.io/test/nvidia/cloud-native
   image: nvidia-fs
   version: "2.20.5"
   imagePullPolicy: IfNotPresent
@@ -444,7 +425,7 @@ gds:
 
 gdrcopy:
   enabled: false
-  repository: nvcr.io/nvidia/cloud-native
+  repository: registry.ddbuild.io/test/nvidia/cloud-native
   image: gdrdrv
   version: "v2.4.4"
   imagePullPolicy: IfNotPresent
@@ -463,7 +444,7 @@ vgpuManager:
   resources: {}
   driverManager:
     image: k8s-driver-manager
-    repository: nvcr.io/nvidia/cloud-native
+    repository: registry.ddbuild.io/test/nvidia/cloud-native
     # When choosing a different version of k8s-driver-manager, DO NOT downgrade to a version lower than v0.6.4
     # to ensure k8s-driver-manager stays compatible with gpu-operator starting from v24.3.0
     version: v0.8.0
@@ -476,7 +457,7 @@ vgpuManager:
 
 vgpuDeviceManager:
   enabled: true
-  repository: nvcr.io/nvidia/cloud-native
+  repository: registry.ddbuild.io/test/nvidia/cloud-native
   image: vgpu-device-manager
   version: v0.2.8
   imagePullPolicy: IfNotPresent
@@ -488,7 +469,7 @@ vgpuDeviceManager:
 
 vfioManager:
   enabled: true
-  repository: nvcr.io/nvidia
+  repository: registry.ddbuild.io/test/nvidia
   image: cuda
   version: 12.8.0-base-ubi9
   imagePullPolicy: IfNotPresent
@@ -497,7 +478,7 @@ vfioManager:
   resources: {}
   driverManager:
     image: k8s-driver-manager
-    repository: nvcr.io/nvidia/cloud-native
+    repository: registry.ddbuild.io/test/nvidia/cloud-native
     # When choosing a different version of k8s-driver-manager, DO NOT downgrade to a version lower than v0.6.4
     # to ensure k8s-driver-manager stays compatible with gpu-operator starting from v24.3.0
     version: v0.8.0
@@ -516,15 +497,15 @@ kataManager:
       - name: kata-nvidia-gpu
         nodeSelector: {}
         artifacts:
-          url: nvcr.io/nvidia/cloud-native/kata-gpu-artifacts:ubuntu22.04-535.54.03
+          url: registry.ddbuild.io/test/nvidia/cloud-native/kata-gpu-artifacts:ubuntu22.04-535.54.03
           pullSecret: ""
       - name: kata-nvidia-gpu-snp
         nodeSelector:
           "nvidia.com/cc.capable": "true"
         artifacts:
-          url: nvcr.io/nvidia/cloud-native/kata-gpu-artifacts:ubuntu22.04-535.86.10-snp
+          url: registry.ddbuild.io/test/nvidia/cloud-native/kata-gpu-artifacts:ubuntu22.04-535.86.10-snp
           pullSecret: ""
-  repository: nvcr.io/nvidia/cloud-native
+  repository: registry.ddbuild.io/test/nvidia/cloud-native
   image: k8s-kata-manager
   version: v0.2.3
   imagePullPolicy: IfNotPresent
@@ -534,7 +515,7 @@ kataManager:
 
 sandboxDevicePlugin:
   enabled: true
-  repository: nvcr.io/nvidia
+  repository: registry.ddbuild.io/test/nvidia
   image: kubevirt-gpu-device-plugin
   version: v1.3.1
   imagePullPolicy: IfNotPresent
@@ -546,7 +527,7 @@ sandboxDevicePlugin:
 ccManager:
   enabled: false
   defaultMode: "off"
-  repository: nvcr.io/nvidia/cloud-native
+  repository: registry.ddbuild.io/test/nvidia/cloud-native
   image: k8s-cc-manager
   version: v0.1.1
   imagePullPolicy: IfNotPresent
@@ -557,6 +538,9 @@ ccManager:
   resources: {}
 
 node-feature-discovery:
+  image:
+    repository: registry.ddbuild.io/test/nfd/node-feature-discovery
+  namespaceOverride: nvidia-node
   enableNodeFeatureApi: true
   priorityClassName: system-node-critical
   gc:
@@ -565,23 +549,26 @@ node-feature-discovery:
     serviceAccount:
       name: node-feature-discovery
       create: false
+    tolerations:
+      - key: "node"
+        operator: "Equal"
+        value: "nodeless"
+        effect: "NoSchedule"
   worker:
+    nodeSelector:
+      node.datadoghq.com/runtime: nvidia
+    hostNetwork: false
     serviceAccount:
       name: node-feature-discovery
       # disable creation to avoid duplicate serviceaccount creation by master spec below
       create: false
     tolerations:
-    - key: "node-role.kubernetes.io/master"
-      operator: "Equal"
-      value: ""
-      effect: "NoSchedule"
-    - key: "node-role.kubernetes.io/control-plane"
-      operator: "Equal"
-      value: ""
-      effect: "NoSchedule"
-    - key: nvidia.com/gpu
-      operator: Exists
-      effect: NoSchedule
+      - effect: NoSchedule
+        key: node
+        value: nodeless
+      - effect: NoSchedule
+        key: runtime
+        value: nvidia
     config:
       sources:
         pci:
@@ -603,3 +590,8 @@ node-feature-discovery:
       # resourceLabels: ["nvidia.com/feature-1","nvidia.com/feature-2"]
       # enableTaints: false
       # labelWhiteList: "nvidia.com/gpu"
+    tolerations:
+      - key: "node"
+        operator: "Equal"
+        value: "nodeless"
+        effect: "NoSchedule"
