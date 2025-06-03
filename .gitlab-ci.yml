@@ -1,0 +1,21 @@
+include: https://gitlab-templates.ddbuild.io/compute-delivery/v2/compute-delivery.yml
+
+test:
+  stage: verify
+  tags: [ "arch:amd64" ]
+  image: registry.ddbuild.io/images/mirror/golang:1.22
+  variables:
+    GOTOOLCHAIN: "auto"
+  script:
+    - make unit-test
+
+build-docker-image-main:
+  variables:
+    IMAGE_NAME: nvidia/gpu-operator
+  extends: .build-docker-image
+
+build-docker-image-validator:
+  variables:
+    EXTRA_ARGS: --file=validator.Dockerfile
+    IMAGE_NAME: nvidia/gpu-operator-validator
+  extends: .build-docker-image
