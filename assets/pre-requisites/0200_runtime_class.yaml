@@ -5,3 +5,18 @@ metadata:
   labels:
     app.kubernetes.io/component: gpu-operator
   name: "FILLED_BY_OPERATOR"
+scheduling:
+  nodeSelector:
+    node-role.kubernetes.io/nodeless: ""
+    node.datadoghq.com/runtime: nvidia
+  tolerations:
+    - effect: NoSchedule
+      key: node
+      value: nodeless
+    - effect: NoSchedule
+      key: runtime
+      value: nvidia
+    # TODO: migrate to nodeless flavors
+    # - effect: NoSchedule
+    #   key: flavor
+    #   value: nodeless-gpu
