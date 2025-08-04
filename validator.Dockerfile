@@ -11,7 +11,7 @@ RUN cp /build/validator/validator /artifacts/nvidia-validator
 RUN cp /build/validator/plugin-workload-validation.yaml /artifacts/
 RUN cp /build/validator/cuda-workload-validation.yaml /artifacts/
 
-FROM registry.ddbuild.io/images/nvidia-cuda-sample:11.6
+FROM registry.ddbuild.io/images/nvidia-cuda-sample:12.9
 
 LABEL maintainers="Compute"
 
