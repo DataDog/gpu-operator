@@ -16,7 +16,6 @@ scheduling:
     - effect: NoSchedule
       key: runtime
       value: nvidia
-    # TODO: migrate to nodeless flavors
-    # - effect: NoSchedule
-    #   key: flavor
-    #   value: nodeless-gpu
+    - effect: NoSchedule
+      key: flavor
+      value: nodeless-gpu
