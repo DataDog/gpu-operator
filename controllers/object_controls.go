@@ -4936,6 +4936,7 @@ func transformRuntimeClass(n ClusterPolicyController, spec nodev1.RuntimeClass) 
 
 	obj.Scheduling = spec.Scheduling
 	obj.Labels = spec.Labels
+	obj.SetAnnotations(spec.Annotations)
 
 	logger := n.logger.WithValues("RuntimeClass", obj.Name)
 
