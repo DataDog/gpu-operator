@@ -4,6 +4,10 @@ kind: RuntimeClass
 metadata:
   labels:
     app.kubernetes.io/component: gpu-operator
+  # Prevent helm from deleting the resource when removing the
+  # runtime class from the k8s-platform-runtime-classes chart
+  annotations:
+    "helm.sh/resource-policy": keep
   name: "FILLED_BY_OPERATOR"
 scheduling:
   nodeSelector:
