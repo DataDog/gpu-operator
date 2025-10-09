@@ -147,16 +147,18 @@ func (r *NVIDIADriverReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return reconcile.Result{}, nil
 	}
 
-	if instance.Spec.UsePrecompiledDrivers() && (instance.Spec.IsGDSEnabled() || instance.Spec.IsGDRCopyEnabled()) {
-		err = fmt.Errorf("GPUDirect Storage driver (nvidia-fs) and/or GDRCopy driver is not supported along with pre-compiled NVIDIA drivers")
-		logger.V(consts.LogLevelError).Error(nil, err.Error())
-		instance.Status.State = nvidiav1alpha1.NotReady
-		condErr = r.conditionUpdater.SetConditionsError(ctx, instance, conditions.ReconcileFailed, err.Error())
-		if condErr != nil {
-			logger.V(consts.LogLevelDebug).Error(nil, condErr.Error())
-		}
-		return reconcile.Result{}, nil
-	}
+	// Datadog's GDRCopy is compatible with precompiled drivers
+	// See https://github.com/DataDog/gdrcopy/blob/datadog/nvidia-gdrcopy-driver.sh
+	// if instance.Spec.UsePrecompiledDrivers() && (instance.Spec.IsGDSEnabled() || instance.Spec.IsGDRCopyEnabled()) {
+	// 	err = fmt.Errorf("GPUDirect Storage driver (nvidia-fs) and/or GDRCopy driver is not supported along with pre-compiled NVIDIA drivers")
+	// 	logger.V(consts.LogLevelError).Error(nil, err.Error())
+	// 	instance.Status.State = nvidiav1alpha1.NotReady
+	// 	condErr = r.conditionUpdater.SetConditionsError(ctx, instance, conditions.ReconcileFailed, err.Error())
+	// 	if condErr != nil {
+	// 		logger.V(consts.LogLevelDebug).Error(nil, condErr.Error())
+	// 	}
+	// 	return reconcile.Result{}, nil
+	// }
 
 	if instance.Spec.IsGDSEnabled() && instance.Spec.IsOpenKernelModulesRequired() && !instance.Spec.IsOpenKernelModulesEnabled() {
 		err = fmt.Errorf("GPUDirect Storage driver '%s' is only supported with NVIDIA OpenRM drivers. Please set 'useOpenKernelModules=true' to enable OpenRM mode", instance.Spec.GPUDirectStorage.Version)
