@@ -9,13 +9,7 @@ test:
   script:
     - make unit-test
 
-build-docker-image-main:
+build-docker-image:
   variables:
     IMAGE_NAME: nvidia/gpu-operator
-  extends: .build-docker-image
-
-build-docker-image-validator:
-  variables:
-    EXTRA_ARGS: --file=validator.Dockerfile
-    IMAGE_NAME: nvidia/gpu-operator-validator
   extends: .build-docker-image
