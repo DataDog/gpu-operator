@@ -597,7 +597,8 @@ func getGDRCopySpec(spec *nvidiav1alpha1.NVIDIADriverSpec, pool nodePool) (*gdrc
 		return nil, nil
 	}
 	gdrcopySpec := spec.GDRCopy
-	imagePath, err := gdrcopySpec.GetImagePath(pool.getOS())
+	// Datadog specific: use precompiled gdrcopy image if precompiled drivers are used
+	imagePath, err := DatadogGetGDRCopyImagePath(spec, pool)
 	if err != nil {
 		return nil, err
 	}
