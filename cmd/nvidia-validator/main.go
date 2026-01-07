@@ -461,6 +461,8 @@ func isValidComponent() bool {
 		fallthrough
 	case GDRCOPY:
 		fallthrough
+	case "mig-partition":
+		fallthrough
 	case NVIDIAPEERMEM:
 		return true
 	default:
@@ -638,6 +640,15 @@ func validateComponent(ctx context.Context, componentFlag string) error {
 		err := CCManager.validate()
 		if err != nil {
 			return fmt.Errorf("error validating CC Manager installation: %w", err)
+		}
+		return nil
+	case "mig-partition":
+		migPartition := &MIGPartition{
+			ctx: ctx,
+		}
+		err := migPartition.validate()
+		if err != nil {
+			return fmt.Errorf("error validating mig partitioning: %w", err)
 		}
 		return nil
 	default:

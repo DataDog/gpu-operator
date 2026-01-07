@@ -2342,6 +2342,7 @@ func TransformValidator(obj *appsv1.DaemonSet, config *gpuv1.ClusterPolicySpec, 
 		"toolkit",
 		"cuda",
 		"plugin",
+		"mig-partition",
 	}
 
 	for _, component := range components {
@@ -2501,6 +2502,8 @@ func TransformValidatorComponent(config *gpuv1.ClusterPolicySpec, podSpec *corev
 					setContainerEnv(&(podSpec.InitContainers[i]), env.Name, env.Value)
 				}
 			}
+		case "mig-partition":
+			return nil
 		case "cc-manager":
 			if !config.CCManager.IsEnabled() {
 				// remove  cc-manager init container from validator Daemonset if it is not enabled
