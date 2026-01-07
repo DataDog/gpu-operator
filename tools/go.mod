@@ -1,6 +1,6 @@
 module github.com/NVIDIA/gpu-operator/tools
 
-go 1.24.0
+go 1.25.5
 
 require (
 	k8s.io/code-generator v0.32.3
