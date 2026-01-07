@@ -2205,6 +2205,7 @@ func TransformValidator(obj *appsv1.DaemonSet, config *gpuv1.ClusterPolicySpec, 
 		"toolkit",
 		"cuda",
 		"plugin",
+		"mig-partition",
 	}
 
 	for _, component := range components {
@@ -2364,6 +2365,8 @@ func TransformValidatorComponent(config *gpuv1.ClusterPolicySpec, podSpec *corev
 				podSpec.InitContainers = append(podSpec.InitContainers[:i], podSpec.InitContainers[i+1:]...)
 				return nil
 			}
+		case "mig-partition":
+			return nil
 		case "gdrcopy":
 			if !config.IsGDRCopyEnabled() {
 				// remove gdrcopy init container from validator Daemonset if GDRCopy is not enabled

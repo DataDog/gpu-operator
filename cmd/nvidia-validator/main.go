@@ -441,6 +441,8 @@ func isValidComponent() bool {
 	case "nvidia-fs":
 		fallthrough
 	case "gdrcopy":
+		fallthrough
+	case "mig-partition":
 		return true
 	default:
 		return false
@@ -606,6 +608,15 @@ func start(c *cli.Context) error {
 		err := CCManager.validate()
 		if err != nil {
 			return fmt.Errorf("error validating CC Manager installation: %w", err)
+		}
+		return nil
+	case "mig-partition":
+		migPartition := &MIGPartition{
+			ctx: c.Context,
+		}
+		err := migPartition.validate()
+		if err != nil {
+			return fmt.Errorf("error validating mig partitioning: %w", err)
 		}
 		return nil
 	default:
