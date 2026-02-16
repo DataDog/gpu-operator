@@ -353,6 +353,8 @@ spec:
             mountPath: /etc/pki/ca-trust/extracted/pem
             readOnly: true
           {{- end}}
+          - name: dev-infiniband
+            mountPath: /dev/infiniband
         {{- if .Driver.Spec.Resources }}
         resources: {{ .Driver.Spec.Resources | yaml | nindent 10 }}
         {{- end }}
@@ -746,3 +748,6 @@ spec:
               - key: ca-bundle.crt
                 path: tls-ca-bundle.pem
         {{- end }}
+        - name: dev-infiniband
+          hostPath:
+            path: /dev/infiniband
