@@ -1,0 +1,50 @@
+{{- if and (.RDMACore) (deref .RDMACore.Enabled) }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: efa-installer-scripts
+  namespace: {{ .Runtime.Namespace }}
+  labels:
+    app.kubernetes.io/component: efa-installer
+data:
+  install-rdma-core.sh: |
+    #!/bin/bash
+    set -euo pipefail
+
+    # Install rdma-core
+    apt-get update
+
+    echo "Installing rdma-core"
+    apt-get install --no-install-recommends -y rdma-core
+
+    echo "Triggering udev events for EFA devices"
+    udevadm trigger --subsystem-match=infiniband --action=add
+
+    # EFA devices need to be separated from Infiniband devices
+    # To avoid advertising non-EFA devices
+    EFA_DIR="/dev/efa"
+
+    rm -rf "$EFA_DIR"
+    mkdir -p "$EFA_DIR"
+
+    for u in "/dev/infiniband/uverbs"*; do
+      ubase=$(basename "$u")
+
+      driver_link="/sys/class/infiniband_verbs/$ubase/device/driver"
+      [ -e "$driver_link" ] || continue
+
+      driver=$(basename "$(readlink -f "$driver_link")")
+
+      if [ "$driver" = "efa" ]; then
+        # get major/minor in decimal
+        major=$((16#$(stat -c '%t' "$u")))
+        minor=$((16#$(stat -c '%T' "$u")))
+
+        # create the char device node
+        mknod "${EFA_DIR}/${ubase}" c "$major" "$minor"
+
+        chown --reference="$u" "${EFA_DIR}/${ubase}"
+        chmod --reference="$u" "${EFA_DIR}/${ubase}"
+      fi
+    done
+{{- end }}

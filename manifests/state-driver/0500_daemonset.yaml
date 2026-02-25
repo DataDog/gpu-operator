@@ -544,6 +544,165 @@ spec:
           periodSeconds: 10
           timeoutSeconds: 10
       {{- end }}
+      # Container 1: EFA Driver (runs independently)
+      {{- if and (.EFA) (.EFA.Spec) (deref .EFA.Spec.Enabled) }}
+      - name: efa-driver-ctr
+        image: {{ .EFA.ImagePath }}
+        imagePullPolicy: {{ default "IfNotPresent" .EFA.Spec.ImagePullPolicy }}
+        {{- if .EFA.Spec.Env }}
+        env:
+          {{- range .EFA.Spec.Env }}
+          - name: {{ .Name }}
+            value: {{ .Value | quote }}
+          {{- end }}
+        {{- end }}
+        securityContext:
+          runAsUser: 0
+          privileged: true
+          seLinuxOptions:
+            level: "s0"
+        volumeMounts:
+          - name: lib-modules
+            mountPath: /lib/modules
+          - name: usr-src
+            mountPath: /usr/src
+          - name: host-etc
+            mountPath: /host-etc
+        {{- if .Driver.Spec.Resources }}
+        resources: {{ .Driver.Spec.Resources | yaml | nindent 10 }}
+        {{- end }}
+        startupProbe:
+          exec:
+            command: [sh, -c, 'lsmod | grep efa']
+          initialDelaySeconds: 10
+          failureThreshold: 120
+          successThreshold: 1
+          periodSeconds: 10
+          timeoutSeconds: 10
+      {{- end }}
+      # Container 2: EFA NV Peermem (waits for EFA)
+      {{- if and (.EFANVPeermem) (.EFANVPeermem.Spec) (deref .EFANVPeermem.Spec.Enabled) }}
+      - name: efa-nv-peermem-ctr
+        image: {{ .EFANVPeermem.ImagePath }}
+        imagePullPolicy: {{ default "IfNotPresent" .EFANVPeermem.Spec.ImagePullPolicy }}
+        command: [bash, -xc]
+        args: ["echo 'Waiting for NVIDIA driver and EFA driver...'; until [ -f /run/nvidia/validations/.driver-ctr-ready ] && lsmod | grep efa; do sleep 5; done; echo 'Both drivers ready, loading efa_nv_peermem...'; exec /run.sh"]
+        {{- if .EFANVPeermem.Spec.Env }}
+        env:
+          {{- range .EFANVPeermem.Spec.Env }}
+          - name: {{ .Name }}
+            value: {{ .Value | quote }}
+          {{- end }}
+        {{- end }}
+        securityContext:
+          runAsUser: 0
+          privileged: true
+          seLinuxOptions:
+            level: "s0"
+        volumeMounts:
+          - name: run-nvidia
+            mountPath: /run/nvidia
+            mountPropagation: HostToContainer
+          - name: lib-modules
+            mountPath: /lib/modules
+          - name: usr-src
+            mountPath: /usr/src
+          - name: host-etc
+            mountPath: /host-etc
+        {{- if .Driver.Spec.Resources }}
+        resources: {{ .Driver.Spec.Resources | yaml | nindent 10 }}
+        {{- end }}
+        startupProbe:
+          exec:
+            command: [sh, -c, 'lsmod | grep efa_nv_peermem']
+          initialDelaySeconds: 10
+          failureThreshold: 120
+          successThreshold: 1
+          periodSeconds: 10
+          timeoutSeconds: 10
+      {{- end }}
+      # Container 3: rdma-core installer (waits for EFA, uses chroot script)
+      {{- if and (.RDMACore) (deref .RDMACore.Enabled) (.EFA) (.EFA.Spec) (deref .EFA.Spec.Enabled) }}
+      - name: rdma-core-installer
+        image: {{ .EFA.ImagePath }}
+        imagePullPolicy: {{ default "IfNotPresent" .EFA.Spec.ImagePullPolicy }}
+        command: [bash, -xc]
+        args:
+          - |
+            set -euo pipefail
+
+            # Wait for EFA driver
+            echo "Waiting for EFA kernel module..."
+            until lsmod | grep efa; do
+              sleep 5
+            done
+
+            # Install rdma-core via chroot
+            echo "Installing rdma-core..."
+            cp /scripts/install-rdma-core.sh /host/usr/local/bin/
+            chmod +x /host/usr/local/bin/install-rdma-core.sh
+            chroot /host /usr/local/bin/install-rdma-core.sh
+
+            echo "rdma-core installation complete"
+            sleep infinity
+        securityContext:
+          privileged: true
+          runAsUser: 0
+          seLinuxOptions:
+            level: "s0"
+        volumeMounts:
+          - name: host-root
+            mountPath: /host
+          - name: scripts
+            mountPath: /scripts
+        {{- if .Driver.Spec.Resources }}
+        resources: {{ .Driver.Spec.Resources | yaml | nindent 10 }}
+        {{- end }}
+        startupProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - '[ -d /host/dev/efa ] && [ -n "$(ls -A /host/dev/efa 2>/dev/null)" ]'
+          initialDelaySeconds: 15
+          failureThreshold: 60
+          successThreshold: 1
+          periodSeconds: 10
+          timeoutSeconds: 10
+      - name: aws-efa-node-labeler
+        image: {{ .EFA.InstallerImagePath }}
+        imagePullPolicy: {{ default "IfNotPresent" .EFA.Spec.ImagePullPolicy }}
+        command: [bash, -xc]
+        args:
+          - |
+            set -euo pipefail
+            trap "echo 'SIGTERM received, exiting'; exit" TERM
+
+            # Wait for EFA driver
+            echo "Waiting for EFA kernel module..."
+            until lsmod | grep efa_nv_peermem; do
+              sleep 5
+            done
+
+            echo "Labeling node $NODE_NAME with aws-efa-driver-ready=true"
+            kubectl label node $NODE_NAME aws-efa-driver-ready=true --overwrite
+
+            echo "Node labeled successfully, keeping container alive"
+            sleep infinity & wait $!
+        env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+        securityContext:
+          runAsUser: 0
+          privileged: true
+          seLinuxOptions:
+            level: "s0"
+        {{- if .Driver.Spec.Resources }}
+        resources: {{ .Driver.Spec.Resources | yaml | nindent 10 }}
+        {{- end }}
+      {{- end }}
       # TODO: introduce UseOpenShiftDriverToolkit field into NVIDIADriver CR?
     {{- if and (.Openshift) (.Runtime.OpenshiftDriverToolkitEnabled) }}
         # Only kept when OpenShift DriverToolkit side-car is enabled.
@@ -711,6 +870,29 @@ spec:
             items:
               - key: ca-bundle.crt
                 path: tls-ca-bundle.pem
+        {{- end }}
+        {{- if and (.EFA) (.EFA.Spec) (deref .EFA.Spec.Enabled) }}
+        - name: usr-src
+          hostPath:
+            path: /usr/src
+        - name: lib-modules
+          hostPath:
+            path: /lib/modules
+        {{- end }}
+        {{- if and (.RDMACore) (deref .RDMACore.Enabled) }}
+        - name: host-root
+          hostPath:
+            path: /
+        - name: host-etc
+          hostPath:
+            path: /etc
+        - name: scripts
+          configMap:
+            name: efa-installer-scripts
+            items:
+              - key: install-rdma-core.sh
+                path: install-rdma-core.sh
+                mode: 0755
         {{- end }}
         - name: dev-infiniband
           hostPath:

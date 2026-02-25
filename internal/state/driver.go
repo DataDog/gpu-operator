@@ -95,6 +95,9 @@ type driverRenderData struct {
 	GDS               *gdsDriverSpec
 	GPUDirectRDMA     *nvidiav1alpha1.GPUDirectRDMASpec
 	GDRCopy           *gdrcopyDriverSpec
+	EFA               *efaDriverSpec
+	EFANVPeermem      *efaNVPeermemDriverSpec
+	RDMACore          *nvidiav1alpha1.RDMACoreSpec
 	Runtime           *driverRuntimeSpec
 	Openshift         *openshiftSpec
 	Precompiled       *precompiledSpec
@@ -288,6 +291,20 @@ func (s *stateDriver) getManifestObjects(ctx context.Context, cr *nvidiav1alpha1
 			return nil, fmt.Errorf("failed to construct GDRCopy spec: %w", err)
 		}
 		renderData.GDRCopy = gdrcopySpec
+
+		efaSpec, err := getEFASpec(&cr.Spec, nodePool)
+		if err != nil {
+			return nil, fmt.Errorf("failed to construct EFA spec: %w", err)
+		}
+		renderData.EFA = efaSpec
+
+		efaNVPeermemSpec, err := getEFANVPeermemSpec(&cr.Spec, nodePool)
+		if err != nil {
+			return nil, fmt.Errorf("failed to construct EFA NV Peermem spec: %w", err)
+		}
+		renderData.EFANVPeermem = efaNVPeermemSpec
+
+		renderData.RDMACore = cr.Spec.RDMACore
 
 		if !cr.Spec.UsePrecompiledDrivers() && runtimeSpec.OpenshiftDriverToolkitEnabled {
 			renderData.Openshift = &openshiftSpec{
@@ -605,6 +622,49 @@ func getGDRCopySpec(spec *nvidiav1alpha1.NVIDIADriverSpec, pool nodePool) (*gdrc
 
 	return &gdrcopyDriverSpec{
 		gdrcopySpec,
+		imagePath,
+	}, nil
+}
+
+func getEFASpec(spec *nvidiav1alpha1.NVIDIADriverSpec, pool nodePool) (*efaDriverSpec, error) {
+	if spec == nil || spec.EFA == nil || spec.EFA.Enabled == nil || !*spec.EFA.Enabled {
+		// note: EFA is optional in the NvidiaDriver CRD
+		return nil, nil
+	}
+	efaSpec := spec.EFA
+	// Datadog specific: EFA only supports precompiled drivers
+	imagePath, err := DatadogGetEFAImagePath(spec, pool)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get installer image path (for node labeler with kubectl)
+	installerImagePath, err := image.ImagePath(efaSpec.InstallerRepository, efaSpec.InstallerImage, efaSpec.InstallerVersion, "")
+	if err != nil {
+		return nil, err
+	}
+
+	return &efaDriverSpec{
+		Spec:               efaSpec,
+		ImagePath:          imagePath,
+		InstallerImagePath: installerImagePath,
+	}, nil
+}
+
+func getEFANVPeermemSpec(spec *nvidiav1alpha1.NVIDIADriverSpec, pool nodePool) (*efaNVPeermemDriverSpec, error) {
+	if spec == nil || spec.EFANVPeermem == nil || spec.EFANVPeermem.Enabled == nil || !*spec.EFANVPeermem.Enabled {
+		// note: EFA NV Peermem is optional in the NvidiaDriver CRD
+		return nil, nil
+	}
+	efaNVPeermemSpec := spec.EFANVPeermem
+	// Datadog specific: EFA NV Peermem only supports precompiled drivers
+	imagePath, err := DatadogGetEFANVPeermemImagePath(spec, pool)
+	if err != nil {
+		return nil, err
+	}
+
+	return &efaNVPeermemDriverSpec{
+		efaNVPeermemSpec,
 		imagePath,
 	}, nil
 }
