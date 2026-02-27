@@ -639,7 +639,8 @@ func getEFASpec(spec *nvidiav1alpha1.NVIDIADriverSpec, pool nodePool) (*efaDrive
 	}
 
 	// Get installer image path (for node labeler with kubectl)
-	installerImagePath, err := image.ImagePath(efaSpec.InstallerRepository, efaSpec.InstallerImage, efaSpec.InstallerVersion, "")
+	// Uses same repository as EFA driver image
+	installerImagePath, err := image.ImagePath(efaSpec.Repository, efaSpec.InstallerImage, efaSpec.InstallerVersion, "")
 	if err != nil {
 		return nil, err
 	}
