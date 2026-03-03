@@ -2,10 +2,11 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: {{ .Driver.Name }}-efa
+  name: "{{ .Driver.AppName }}-efa"
   namespace: {{ .Runtime.Namespace }}
   labels:
-    app.kubernetes.io/component: efa-driver
+    app: "{{ .Driver.AppName }}-efa"
+    app.kubernetes.io/component: nvidia-driver
     app.kubernetes.io/managed-by: gpu-operator
 spec:
   selector:
@@ -25,6 +26,9 @@ spec:
       serviceAccountName: {{ .Driver.Name }}
       tolerations:
       - operator: Exists
+      # This should be enough for EFA to be installed on the node, no need to copy affinity/nodeSelector from nvidia-driver daemonset
+      nodeSelector:
+        feature.node.kubernetes.io/kernel-version.full: {{ .Precompiled.KernelVersion | quote }} # EFA is ONLY precompiled
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -42,12 +46,6 @@ spec:
         securityContext:
           runAsUser: 0
           privileged: true
-        command:
-          - "sleep"
-          - "infinity"
-        {{- if .Driver.Spec.Resources }}
-        resources: {{ .Driver.Spec.Resources | yaml | nindent 10 }}
-        {{- end }}
         volumeMounts:
         - name: lib-modules
           mountPath: /lib/modules
@@ -59,12 +57,6 @@ spec:
         securityContext:
           runAsUser: 0
           privileged: true
-        command:
-          - "sleep"
-          - "infinity"
-        {{- if .Driver.Spec.Resources }}
-        resources: {{ .Driver.Spec.Resources | yaml | nindent 10 }}
-        {{- end }}
         volumeMounts:
         - name: lib-modules
           mountPath: /lib/modules
@@ -78,19 +70,17 @@ spec:
         securityContext:
           runAsUser: 0
           privileged: true
-        {{- if .Driver.Spec.Resources }}
-        resources: {{ .Driver.Spec.Resources | yaml | nindent 10 }}
-        {{- end }}
+        # needed to install rdma-core from host
+        volumeMounts:
+        - name: host-root
+          mountPath: /host
         command:
-          - sleep
-          - "infinity"
-        # command:
-        #   - bash
-        #   - -c
-        #   - |
-        #     set -euo pipefail
-        #     cp /mnt/scripts/* /host/usr/local/bin &&
-        #     chroot /host /usr/local/bin/install-rdma-core.sh
+          - bash
+          - -c
+          - |
+            set -euo pipefail
+            cp /mnt/scripts/* /host/usr/local/bin &&
+            chroot /host /usr/local/bin/install-rdma-core.sh
         volumeMounts:
         - name: host-root
           mountPath: /host
@@ -104,20 +94,14 @@ spec:
         image: {{ .EFA.InstallerImagePath }}
         imagePullPolicy: IfNotPresent
         command:
-          - sleep
-          - "infinity"
-        # command:
-        # - bash
-        # - -c
-        # - |
-        #   set -euo pipefail
-        #   trap "echo 'SIGTERM received, exiting'; exit" TERM
-        #   echo "Labeling node $NODE_NAME with aws-efa-driver-ready=true"
-        #   kubectl label node $NODE_NAME aws-efa-driver-ready=true --overwrite
-        #   sleep infinity & wait $!
-        {{- if .Driver.Spec.Resources }}
-        resources: {{ .Driver.Spec.Resources | yaml | nindent 10 }}
-        {{- end }}
+          - bash
+          - -c
+          - |
+            set -euo pipefail
+            trap "echo 'SIGTERM received, exiting'; exit" TERM
+            echo "Labeling node $NODE_NAME with aws-efa-driver-ready=true"
+            kubectl label node $NODE_NAME aws-efa-driver-ready=true --overwrite
+            sleep infinity & wait $!
         env:
         - name: NODE_NAME
           valueFrom:
@@ -127,15 +111,10 @@ spec:
       - name: host-root
         hostPath:
           path: "/"
-      - name: host-etc
-        hostPath:
-          path: /etc
+      # needed to load modules from host
       - name: lib-modules
         hostPath:
           path: /lib/modules
-      - name: usr-src
-        hostPath:
-          path: /usr/src
       - name: scripts
         configMap:
           name: efa-installer-scripts
