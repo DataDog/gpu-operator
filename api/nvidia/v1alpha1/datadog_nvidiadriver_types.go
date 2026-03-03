@@ -2,6 +2,7 @@ package v1alpha1
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/NVIDIA/gpu-operator/internal/image"
@@ -40,23 +41,28 @@ func (d *GDRCopySpec) GetPrecompiledImagePath(osVersion string, kernelVersion st
 	return image, nil
 }
 
-// GetPrecompiledImagePath returns the precompiled EFA driver image path for a
-// given OS version and kernel version. Precompiled EFA driver images follow
-// the following format:
-// <repository>/<image>:<major-version>-<kernel-ver>-<os-ver>
+// GetEFAPrecompiledImagePath returns the precompiled EFA driver image path from environment variables.
+// Reads: EFA_REPOSITORY, EFA_IMAGE, EFA_VERSION
+// Format: <repository>/<image>:<major-version>-<kernel-ver>-<os-ver>
 // Example: registry.ddbuild.io/images/efa-driver:v3-6.8.0-1047-aws-ubuntu22.04
-func (e *EFASpec) GetPrecompiledImagePath(osVersion string, kernelVersion string) (string, error) {
-	// Get base image path with major version (e.g., "v3")
-	img, err := image.ImagePath(e.Repository, e.Image, e.Version, "")
+func GetEFAPrecompiledImagePath(osVersion string, kernelVersion string) (string, error) {
+	repository := os.Getenv("EFA_REPOSITORY")
+	imageName := os.Getenv("EFA_IMAGE")
+	version := os.Getenv("EFA_VERSION")
+
+	if repository == "" || imageName == "" || version == "" {
+		return "", fmt.Errorf("EFA environment variables not set (EFA_REPOSITORY, EFA_IMAGE, EFA_VERSION)")
+	}
+
+	img, err := image.ImagePath(repository, imageName, version, "")
 	if err != nil {
-		return "", fmt.Errorf("failed to get image path from crd: %w", err)
+		return "", fmt.Errorf("failed to get EFA image path: %w", err)
 	}
 
 	if strings.Contains(img, "sha256:") {
 		return "", fmt.Errorf("specifying image digest is not supported when precompiled is enabled")
 	}
 
-	// Append -<kernel-ver>-<os-ver>
 	img = fmt.Sprintf("%s-%s-%s", img, kernelVersion, osVersion)
 
 	_, err = ref.New(img)
@@ -67,23 +73,28 @@ func (e *EFASpec) GetPrecompiledImagePath(osVersion string, kernelVersion string
 	return img, nil
 }
 
-// GetPrecompiledImagePath returns the precompiled EFA NV Peermem driver image path for a
-// given OS version and kernel version. Precompiled EFA NV Peermem driver images follow
-// the following format:
-// <repository>/<image>:<major-version>-<kernel-ver>-<os-ver>
+// GetEFANVPeermemPrecompiledImagePath returns the precompiled EFA NV Peermem driver image path from environment variables.
+// Reads: EFA_NV_PEERMEM_REPOSITORY, EFA_NV_PEERMEM_IMAGE, EFA_NV_PEERMEM_VERSION
+// Format: <repository>/<image>:<major-version>-<kernel-ver>-<os-ver>
 // Example: registry.ddbuild.io/images/efa-nv-peermem-driver:v1-6.8.0-1047-aws-ubuntu22.04
-func (e *EFANVPeermemSpec) GetPrecompiledImagePath(osVersion string, kernelVersion string) (string, error) {
-	// Get base image path with major version (e.g., "v1")
-	img, err := image.ImagePath(e.Repository, e.Image, e.Version, "")
+func GetEFANVPeermemPrecompiledImagePath(osVersion string, kernelVersion string) (string, error) {
+	repository := os.Getenv("EFA_NV_PEERMEM_REPOSITORY")
+	imageName := os.Getenv("EFA_NV_PEERMEM_IMAGE")
+	version := os.Getenv("EFA_NV_PEERMEM_VERSION")
+
+	if repository == "" || imageName == "" || version == "" {
+		return "", fmt.Errorf("EFA NV Peermem environment variables not set (EFA_NV_PEERMEM_REPOSITORY, EFA_NV_PEERMEM_IMAGE, EFA_NV_PEERMEM_VERSION)")
+	}
+
+	img, err := image.ImagePath(repository, imageName, version, "")
 	if err != nil {
-		return "", fmt.Errorf("failed to get image path from crd: %w", err)
+		return "", fmt.Errorf("failed to get EFA NV Peermem image path: %w", err)
 	}
 
 	if strings.Contains(img, "sha256:") {
 		return "", fmt.Errorf("specifying image digest is not supported when precompiled is enabled")
 	}
 
-	// Append -<kernel-ver>-<os-ver>
 	img = fmt.Sprintf("%s-%s-%s", img, kernelVersion, osVersion)
 
 	_, err = ref.New(img)

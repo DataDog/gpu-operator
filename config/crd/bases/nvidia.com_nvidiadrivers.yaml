@@ -82,96 +82,6 @@ spec:
                 - message: driverType is an immutable field. Please create a new NvidiaDriver
                     resource instead when you want to change this setting.
                   rule: self == oldSelf
-              efa:
-                description: EFA defines the spec for AWS EFA driver (precompiled only)
-                properties:
-                  enabled:
-                    description: Enabled indicates if EFA is enabled through GPU operator
-                    type: boolean
-                  env:
-                    description: 'Optional: List of environment variables'
-                    items:
-                      description: EnvVar represents an environment variable present
-                        in a Container.
-                      properties:
-                        name:
-                          description: Name of the environment variable.
-                          type: string
-                        value:
-                          description: Value of the environment variable.
-                          type: string
-                      required:
-                      - name
-                      type: object
-                    type: array
-                  image:
-                    description: EFA driver image name
-                    pattern: '[a-zA-Z0-9\-]+'
-                    type: string
-                  imagePullPolicy:
-                    description: Image pull policy
-                    type: string
-                  imagePullSecrets:
-                    description: Image pull secrets
-                    items:
-                      type: string
-                    type: array
-                  installerImage:
-                    description: EFA installer image name (contains kubectl)
-                    type: string
-                  installerVersion:
-                    description: EFA installer image version
-                    type: string
-                  repository:
-                    description: EFA driver image repository
-                    type: string
-                  version:
-                    description: EFA driver image tag
-                    type: string
-                type: object
-              efaNvPeermem:
-                description: EFANVPeermem defines the spec for AWS EFA NV Peermem
-                  driver (precompiled only)
-                properties:
-                  enabled:
-                    description: Enabled indicates if EFA NV Peermem is enabled through
-                      GPU operator
-                    type: boolean
-                  env:
-                    description: 'Optional: List of environment variables'
-                    items:
-                      description: EnvVar represents an environment variable present
-                        in a Container.
-                      properties:
-                        name:
-                          description: Name of the environment variable.
-                          type: string
-                        value:
-                          description: Value of the environment variable.
-                          type: string
-                      required:
-                      - name
-                      type: object
-                    type: array
-                  image:
-                    description: EFA NV Peermem driver image name
-                    pattern: '[a-zA-Z0-9\-]+'
-                    type: string
-                  imagePullPolicy:
-                    description: Image pull policy
-                    type: string
-                  imagePullSecrets:
-                    description: Image pull secrets
-                    items:
-                      type: string
-                    type: array
-                  repository:
-                    description: EFA NV Peermem driver image repository
-                    type: string
-                  version:
-                    description: EFA NV Peermem driver image tag
-                    type: string
-                type: object
               env:
                 description: 'Optional: List of environment variables'
                 items:
@@ -631,13 +541,6 @@ spec:
                   useHostMofed:
                     description: UseHostMOFED indicates to use MOFED drivers directly
                       installed on the host to enable GPUDirect RDMA
-                    type: boolean
-                type: object
-              rdmaCore:
-                description: RDMACore defines the spec for rdma-core userspace libraries
-                properties:
-                  enabled:
-                    description: Enabled indicates if rdma-core installation is enabled
                     type: boolean
                 type: object
               readinessProbe:

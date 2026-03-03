@@ -1,4 +1,4 @@
-{{- if and (.RDMACore) (deref .RDMACore.Enabled) }}
+{{- if .RDMACoreEnabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:

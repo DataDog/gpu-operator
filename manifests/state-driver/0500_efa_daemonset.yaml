@@ -1,4 +1,4 @@
-{{- if and (.EFA) (.EFA.Spec) (deref .EFA.Spec.Enabled) }}
+{{- if and (.EFA) (.EFA.Enabled) }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -38,17 +38,13 @@ spec:
       # InitContainer 1: EFA driver (precompiled)
       - name: efa-installer
         image: {{ .EFA.ImagePath }}
-        imagePullPolicy: {{ default "IfNotPresent" .EFA.Spec.ImagePullPolicy }}
+        imagePullPolicy: IfNotPresent
         securityContext:
           runAsUser: 0
           privileged: true
-        {{- if .EFA.Spec.Env }}
-        env:
-          {{- range .EFA.Spec.Env }}
-          - name: {{ .Name }}
-            value: {{ .Value | quote }}
-          {{- end }}
-        {{- end }}
+        command:
+          - "sleep"
+          - "infinity"
         {{- if .Driver.Spec.Resources }}
         resources: {{ .Driver.Spec.Resources | yaml | nindent 10 }}
         {{- end }}
@@ -56,20 +52,16 @@ spec:
         - name: lib-modules
           mountPath: /lib/modules
       # InitContainer 2: EFA NV Peermem driver (precompiled, separate image)
-      {{- if and (.EFANVPeermem) (.EFANVPeermem.Spec) (deref .EFANVPeermem.Spec.Enabled) }}
+      {{- if and (.EFANVPeermem) (.EFANVPeermem.Enabled) }}
       - name: efa-nv-peermem-installer
         image: {{ .EFANVPeermem.ImagePath }}
-        imagePullPolicy: {{ default "IfNotPresent" .EFANVPeermem.Spec.ImagePullPolicy }}
+        imagePullPolicy: IfNotPresent
         securityContext:
           runAsUser: 0
           privileged: true
-        {{- if .EFANVPeermem.Spec.Env }}
-        env:
-          {{- range .EFANVPeermem.Spec.Env }}
-          - name: {{ .Name }}
-            value: {{ .Value | quote }}
-          {{- end }}
-        {{- end }}
+        command:
+          - "sleep"
+          - "infinity"
         {{- if .Driver.Spec.Resources }}
         resources: {{ .Driver.Spec.Resources | yaml | nindent 10 }}
         {{- end }}
@@ -78,10 +70,11 @@ spec:
           mountPath: /lib/modules
       {{- end }}
       # InitContainer 3: RDMA Core installer
-      {{- if and (.RDMACore) (deref .RDMACore.Enabled) }}
+      {{- if .RDMACoreEnabled }}
       - name: rdma-core-installer
+        # Image from EFA_INSTALLER_IMAGE env var (set by chart), falls back to EFA driver image
         image: {{ .EFA.InstallerImagePath }}
-        imagePullPolicy: {{ default "IfNotPresent" .EFA.Spec.ImagePullPolicy }}
+        imagePullPolicy: IfNotPresent
         securityContext:
           runAsUser: 0
           privileged: true
@@ -91,13 +84,13 @@ spec:
         command:
           - sleep
           - "infinity"
-        command:
-          - bash
-          - -c
-          - |
-            set -euo pipefail
-            cp /mnt/scripts/* /host/usr/local/bin &&
-            chroot /host /usr/local/bin/install-rdma-core.sh
+        # command:
+        #   - bash
+        #   - -c
+        #   - |
+        #     set -euo pipefail
+        #     cp /mnt/scripts/* /host/usr/local/bin &&
+        #     chroot /host /usr/local/bin/install-rdma-core.sh
         volumeMounts:
         - name: host-root
           mountPath: /host
@@ -107,17 +100,21 @@ spec:
       containers:
       # Main container: AWS EFA Node Labeler
       - name: aws-efa-node-labeler
+        # Image from EFA_INSTALLER_IMAGE env var (set by chart), falls back to EFA driver image
         image: {{ .EFA.InstallerImagePath }}
-        imagePullPolicy: {{ default "IfNotPresent" .EFA.Spec.ImagePullPolicy }}
+        imagePullPolicy: IfNotPresent
         command:
-        - bash
-        - -c
-        - |
-          set -euo pipefail
-          trap "echo 'SIGTERM received, exiting'; exit" TERM
-          echo "Labeling node $NODE_NAME with aws-efa-driver-ready=true"
-          kubectl label node $NODE_NAME aws-efa-driver-ready=true --overwrite
-          sleep infinity & wait $!
+          - sleep
+          - "infinity"
+        # command:
+        # - bash
+        # - -c
+        # - |
+        #   set -euo pipefail
+        #   trap "echo 'SIGTERM received, exiting'; exit" TERM
+        #   echo "Labeling node $NODE_NAME with aws-efa-driver-ready=true"
+        #   kubectl label node $NODE_NAME aws-efa-driver-ready=true --overwrite
+        #   sleep infinity & wait $!
         {{- if .Driver.Spec.Resources }}
         resources: {{ .Driver.Spec.Resources | yaml | nindent 10 }}
         {{- end }}

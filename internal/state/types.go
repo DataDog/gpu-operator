@@ -51,18 +51,3 @@ type gdrcopyDriverSpec struct {
 	Spec      *nvidiav1alpha1.GDRCopySpec
 	ImagePath string
 }
-
-// efaDriverSpec is a wrapper of EFASpec with additional ImagePath fields
-// which are to be populated with the fully-qualified image paths.
-type efaDriverSpec struct {
-	Spec              *nvidiav1alpha1.EFASpec
-	ImagePath         string
-	InstallerImagePath string
-}
-
-// efaNVPeermemDriverSpec is a wrapper of EFANVPeermemSpec with an additional ImagePath field
-// which is to be populated with the fully-qualified image path.
-type efaNVPeermemDriverSpec struct {
-	Spec      *nvidiav1alpha1.EFANVPeermemSpec
-	ImagePath string
-}
