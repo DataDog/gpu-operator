@@ -38,8 +38,7 @@ spec:
                     operator: In
                     values:
                       - "true"
-      initContainers:
-      # InitContainer 1: EFA driver (precompiled)
+      containers:
       - name: efa-installer
         image: {{ .EFA.ImagePath }}
         imagePullPolicy: IfNotPresent
@@ -49,7 +48,6 @@ spec:
         volumeMounts:
         - name: lib-modules
           mountPath: /lib/modules
-      # InitContainer 2: EFA NV Peermem driver (precompiled, separate image)
       {{- if and (.EFANVPeermem) (.EFANVPeermem.Enabled) }}
       - name: efa-nv-peermem-installer
         image: {{ .EFANVPeermem.ImagePath }}
@@ -61,7 +59,6 @@ spec:
         - name: lib-modules
           mountPath: /lib/modules
       {{- end }}
-      # InitContainer 3: RDMA Core installer
       {{- if .RDMACoreEnabled }}
       - name: rdma-core-installer
         # Image from EFA_INSTALLER_IMAGE env var (set by chart), falls back to EFA driver image
@@ -87,26 +84,6 @@ spec:
         - name: scripts
           mountPath: /mnt/scripts
       {{- end }}
-      containers:
-      # Main container: AWS EFA Node Labeler
-      - name: aws-efa-node-labeler
-        # Image from EFA_INSTALLER_IMAGE env var (set by chart), falls back to EFA driver image
-        image: {{ .EFA.InstallerImagePath }}
-        imagePullPolicy: IfNotPresent
-        command:
-          - bash
-          - -c
-          - |
-            set -euo pipefail
-            trap "echo 'SIGTERM received, exiting'; exit" TERM
-            echo "Labeling node $NODE_NAME with aws-efa-driver-ready=true"
-            kubectl label node $NODE_NAME aws-efa-driver-ready=true --overwrite
-            sleep infinity & wait $!
-        env:
-        - name: NODE_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
       volumes:
       - name: host-root
         hostPath:
