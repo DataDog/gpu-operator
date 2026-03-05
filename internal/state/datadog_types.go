@@ -4,7 +4,7 @@ package state
 type efaDriverSpec struct {
 	Enabled            bool
 	ImagePath          string
-	InstallerImagePath string // Populated from EFA_INSTALLER_IMAGE env var
+	InstallerImagePath string // Populated from RDMA_CORE_INSTALLER_IMAGE env var
 }
 
 // efaNVPeermemDriverSpec contains EFA NV Peermem driver configuration populated from environment variables

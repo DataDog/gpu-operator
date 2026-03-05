@@ -61,7 +61,7 @@ spec:
       {{- end }}
       {{- if .RDMACoreEnabled }}
       - name: rdma-core-installer
-        # Image from EFA_INSTALLER_IMAGE env var (set by chart), falls back to EFA driver image
+        # Image from RDMA_CORE_INSTALLER_IMAGE env var (set by chart)
         image: {{ .EFA.InstallerImagePath }}
         imagePullPolicy: IfNotPresent
         securityContext:

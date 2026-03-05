@@ -29,9 +29,9 @@ func DatadogGetEFASpec(pool nodePool) (*efaDriverSpec, error) {
 	}
 
 	// Get installer image from environment variable (set by chart)
-	installerImagePath := os.Getenv("EFA_INSTALLER_IMAGE")
+	installerImagePath := os.Getenv("RDMA_CORE_INSTALLER_IMAGE")
 	if installerImagePath == "" {
-		return nil, fmt.Errorf("EFA_INSTALLER_IMAGE environment variable must be set when EFA is enabled")
+		return nil, fmt.Errorf("RDMA_CORE_INSTALLER_IMAGE environment variable must be set when EFA is enabled")
 	}
 
 	return &efaDriverSpec{
