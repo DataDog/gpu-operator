@@ -78,6 +78,8 @@ spec:
             set -euo pipefail
             cp /mnt/scripts/* /host/usr/local/bin &&
             chroot /host /usr/local/bin/install-rdma-core.sh
+            echo "RDMA core installed"
+            sleep infinity
         volumeMounts:
         - name: host-root
           mountPath: /host

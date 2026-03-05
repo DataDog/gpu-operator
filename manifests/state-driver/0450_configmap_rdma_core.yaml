@@ -17,6 +17,11 @@ data:
     echo "Installing rdma-core"
     apt-get install --no-install-recommends -y rdma-core
 
+    echo "Waiting for EFA devices..."
+    while ! ls /dev/infiniband/uverbs* >/dev/null 2>&1; do
+      sleep 5
+    done
+
     echo "Triggering udev events for EFA devices"
     udevadm trigger --subsystem-match=infiniband --action=add
 
