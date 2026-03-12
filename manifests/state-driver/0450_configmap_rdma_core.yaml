@@ -1,4 +1,4 @@
-{{- if .RDMACoreEnabled }}
+{{- if and (.EFA) (.EFA.Enabled) }}
 apiVersion: v1
 kind: ConfigMap
 metadata:

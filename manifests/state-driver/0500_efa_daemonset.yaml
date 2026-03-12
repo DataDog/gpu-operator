@@ -50,7 +50,6 @@ spec:
         - name: lib-modules
           mountPath: /lib/modules
       # InitContainer 2: EFA NV Peermem driver (precompiled, separate image)
-      {{- if and (.EFANVPeermem) (.EFANVPeermem.Enabled) }}
       - name: efa-nv-peermem-installer
         image: {{ .EFANVPeermem.ImagePath }}
         imagePullPolicy: IfNotPresent
@@ -60,9 +59,7 @@ spec:
         volumeMounts:
         - name: lib-modules
           mountPath: /lib/modules
-      {{- end }}
       # InitContainer 3: RDMA Core installer
-      {{- if .RDMACoreEnabled }}
       - name: rdma-core-installer
         # Image from RDMA_CORE_INSTALLER_IMAGE env var (set by chart)
         image: {{ .EFA.InstallerImagePath }}
@@ -88,7 +85,6 @@ spec:
           mountPath: /host
         - name: scripts
           mountPath: /mnt/scripts
-      {{- end }}
       containers:
       # Main container: AWS EFA Node Labeler
       - name: aws-efa-node-labeler
