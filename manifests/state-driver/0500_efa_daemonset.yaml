@@ -40,7 +40,7 @@ spec:
         - name: lib-modules
           mountPath: /lib/modules
       - name: efa-nv-peermem-installer
-        image: {{ .EFANVPeermem.ImagePath }}
+        image: {{ .EFA.NVPeermemImagePath }}
         imagePullPolicy: IfNotPresent
         securityContext:
           runAsUser: 0

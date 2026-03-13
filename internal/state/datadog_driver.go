@@ -28,6 +28,11 @@ func DatadogGetEFASpec(pool nodePool) (*efaDriverSpec, error) {
 		return nil, err
 	}
 
+	nvPeermemImagePath, err := nvidiav1alpha1.GetEFANVPeermemPrecompiledImagePath(pool.getOS(), pool.kernel)
+	if err != nil {
+		return nil, err
+	}
+
 	// Get installer image from environment variable (set by chart)
 	installerImagePath := os.Getenv("RDMA_CORE_INSTALLER_IMAGE")
 	if installerImagePath == "" {
@@ -37,30 +42,7 @@ func DatadogGetEFASpec(pool nodePool) (*efaDriverSpec, error) {
 	return &efaDriverSpec{
 		Enabled:            true,
 		ImagePath:          imagePath,
+		NVPeermemImagePath: nvPeermemImagePath,
 		InstallerImagePath: installerImagePath,
 	}, nil
-}
-
-// DatadogGetEFANVPeermemSpec returns EFA NV Peermem driver spec populated from environment variables
-func DatadogGetEFANVPeermemSpec(pool nodePool) (*efaNVPeermemDriverSpec, error) {
-	// Check if EFA NV Peermem is enabled via environment variable
-	if os.Getenv("EFA_NV_PEERMEM_ENABLED") != "true" {
-		return nil, nil
-	}
-
-	// Get EFA NV Peermem driver image path from environment variables
-	imagePath, err := nvidiav1alpha1.GetEFANVPeermemPrecompiledImagePath(pool.getOS(), pool.kernel)
-	if err != nil {
-		return nil, err
-	}
-
-	return &efaNVPeermemDriverSpec{
-		Enabled:   true,
-		ImagePath: imagePath,
-	}, nil
-}
-
-// DatadogGetRDMACoreEnabled returns whether RDMA Core is enabled from environment variable
-func DatadogGetRDMACoreEnabled() bool {
-	return os.Getenv("RDMA_CORE_ENABLED") == "true"
 }

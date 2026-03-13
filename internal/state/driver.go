@@ -95,9 +95,7 @@ type driverRenderData struct {
 	GDS               *gdsDriverSpec
 	GPUDirectRDMA     *nvidiav1alpha1.GPUDirectRDMASpec
 	GDRCopy           *gdrcopyDriverSpec
-	EFA               *efaDriverSpec
-	EFANVPeermem      *efaNVPeermemDriverSpec
-	RDMACoreEnabled   bool // Populated from RDMA_CORE_ENABLED env var
+	EFA *efaDriverSpec
 	Runtime           *driverRuntimeSpec
 	Openshift         *openshiftSpec
 	Precompiled       *precompiledSpec
@@ -298,14 +296,6 @@ func (s *stateDriver) getManifestObjects(ctx context.Context, cr *nvidiav1alpha1
 			return nil, fmt.Errorf("failed to construct EFA spec: %w", err)
 		}
 		renderData.EFA = efaSpec
-
-		efaNVPeermemSpec, err := DatadogGetEFANVPeermemSpec(nodePool)
-		if err != nil {
-			return nil, fmt.Errorf("failed to construct EFA NV Peermem spec: %w", err)
-		}
-		renderData.EFANVPeermem = efaNVPeermemSpec
-
-		renderData.RDMACoreEnabled = DatadogGetRDMACoreEnabled()
 
 		if !cr.Spec.UsePrecompiledDrivers() && runtimeSpec.OpenshiftDriverToolkitEnabled {
 			renderData.Openshift = &openshiftSpec{
