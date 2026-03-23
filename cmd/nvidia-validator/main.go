@@ -443,6 +443,8 @@ func isValidComponent() bool {
 	case "gdrcopy":
 		fallthrough
 	case "mig-partition":
+		fallthrough
+	case "efa-driver":
 		return true
 	default:
 		return false
@@ -617,6 +619,16 @@ func start(c *cli.Context) error {
 		err := migPartition.validate()
 		if err != nil {
 			return fmt.Errorf("error validating mig partitioning: %w", err)
+		}
+		return nil
+	// Datadog specific: EFA driver validation
+	case "efa-driver":
+		efaDriver := &EFADriver{
+			ctx: c.Context,
+		}
+		err := efaDriver.validate()
+		if err != nil {
+			return fmt.Errorf("error validating EFA driver installation: %w", err)
 		}
 		return nil
 	default:

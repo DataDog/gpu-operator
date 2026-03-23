@@ -95,6 +95,7 @@ type driverRenderData struct {
 	GDS               *gdsDriverSpec
 	GPUDirectRDMA     *nvidiav1alpha1.GPUDirectRDMASpec
 	GDRCopy           *gdrcopyDriverSpec
+	EFA *efaDriverSpec
 	Runtime           *driverRuntimeSpec
 	Openshift         *openshiftSpec
 	Precompiled       *precompiledSpec
@@ -288,6 +289,13 @@ func (s *stateDriver) getManifestObjects(ctx context.Context, cr *nvidiav1alpha1
 			return nil, fmt.Errorf("failed to construct GDRCopy spec: %w", err)
 		}
 		renderData.GDRCopy = gdrcopySpec
+
+		// Datadog specific: EFA configuration from environment variables
+		efaSpec, err := DatadogGetEFASpec(nodePool)
+		if err != nil {
+			return nil, fmt.Errorf("failed to construct EFA spec: %w", err)
+		}
+		renderData.EFA = efaSpec
 
 		if !cr.Spec.UsePrecompiledDrivers() && runtimeSpec.OpenshiftDriverToolkitEnabled {
 			renderData.Openshift = &openshiftSpec{
