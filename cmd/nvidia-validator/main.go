@@ -463,6 +463,8 @@ func isValidComponent() bool {
 		fallthrough
 	case "mig-partition":
 		fallthrough
+	case "efa-driver":
+		fallthrough
 	case NVIDIAPEERMEM:
 		return true
 	default:
@@ -649,6 +651,16 @@ func validateComponent(ctx context.Context, componentFlag string) error {
 		err := migPartition.validate()
 		if err != nil {
 			return fmt.Errorf("error validating mig partitioning: %w", err)
+		}
+		return nil
+	// Datadog specific: EFA driver validation
+	case "efa-driver":
+		efaDriver := &EFADriver{
+			ctx: ctx,
+		}
+		err := efaDriver.validate()
+		if err != nil {
+			return fmt.Errorf("error validating EFA driver installation: %w", err)
 		}
 		return nil
 	default:

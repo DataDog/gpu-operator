@@ -971,6 +971,12 @@ func (n *ClusterPolicyController) init(ctx context.Context, reconciler *ClusterP
 		n.gpuNodeOSRelease = gpuNodeOSRelease
 		n.gpuNodeOSTag = gpuNodeOSTag
 	}
+
+	// Datadog specific: label EFA-enabled nodes with deploy labels
+	if err := n.labelEFANodes(); err != nil {
+		return err
+	}
+
 	// fetch all nodes and annotate gpu nodes
 	err = n.applyDriverAutoUpgradeAnnotation()
 	if err != nil {
