@@ -9,6 +9,79 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+// EFADriver component
+type EFADriver struct {
+	ctx        context.Context
+	kubeClient kubernetes.Interface
+}
+
+const efaDriverStatusFile = "efa-driver-ready"
+const efaEnabledNodeLabel = "nodegroups.datadoghq.com/efa-enabled"
+
+func (e *EFADriver) validate() error {
+	if err := deleteStatusFile(outputDirFlag + "/" + efaDriverStatusFile); err != nil {
+		return err
+	}
+
+	if err := e.configure(); err != nil {
+		return err
+	}
+
+	isEFANode, err := e.isEFANode()
+	if err != nil {
+		return err
+	}
+
+	if isEFANode {
+		if err := e.runValidation(false); err != nil {
+			log.Info("EFA driver is not ready")
+			return err
+		}
+	}
+
+	return createStatusFile(outputDirFlag + "/" + efaDriverStatusFile)
+}
+
+func (e *EFADriver) configure() error {
+	kubeConfig, err := rest.InClusterConfig()
+	if err != nil {
+		log.Errorf("Error getting config cluster - %s\n", err.Error())
+		return err
+	}
+
+	kubeClient, err := kubernetes.NewForConfig(kubeConfig)
+	if err != nil {
+		log.Errorf("Error getting k8s client - %s\n", err.Error())
+		return err
+	}
+
+	e.kubeClient = kubeClient
+	return nil
+}
+
+func (e *EFADriver) isEFANode() (bool, error) {
+	if e.ctx == nil {
+		e.ctx = context.Background()
+	}
+
+	node, err := getNode(e.ctx, e.kubeClient)
+	if err != nil {
+		return false, fmt.Errorf("unable to fetch node %s to check for EFA: %w", nodeNameFlag, err)
+	}
+
+	return node.GetLabels()[efaEnabledNodeLabel] == "true", nil
+}
+
+func (e *EFADriver) runValidation(silent bool) error {
+	command := shell
+	args := []string{"-c", "ls /dev/efa/uverbs* > /dev/null 2>&1"}
+
+	if withWaitFlag {
+		return runCommandWithWait(command, args, sleepIntervalSecondsFlag, silent)
+	}
+	return runCommand(command, args, silent)
+}
+
 // MIG partition component
 type MIGPartition struct {
 	ctx        context.Context

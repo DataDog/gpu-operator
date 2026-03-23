@@ -881,6 +881,11 @@ func (n *ClusterPolicyController) init(ctx context.Context, reconciler *ClusterP
 		n.gpuNodeOSTag = gpuNodeOSTag
 	}
 
+	// Datadog specific: label EFA-enabled nodes with deploy labels
+	if err := n.labelEFANodes(); err != nil {
+		return err
+	}
+
 	// detect the container runtime on worker nodes
 	err = n.getRuntime()
 	if err != nil {
