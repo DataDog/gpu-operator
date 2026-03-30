@@ -197,6 +197,13 @@ type NVIDIADriverSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="PriorityClassName"
 	PriorityClassName string `json:"priorityClassName,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// Optional: HostNetwork indicates whether the driver pods should use the host network namespace
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="HostNetwork"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
+	HostNetwork *bool `json:"hostNetwork,omitempty"`
 }
 
 // ResourceRequirements describes the compute resource requirements.
