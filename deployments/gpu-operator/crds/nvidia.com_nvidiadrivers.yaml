@@ -192,6 +192,10 @@ spec:
                     description: NVIDIA GPUDirect Storage Driver image tag
                     type: string
                 type: object
+              hostNetwork:
+                description: 'Optional: HostNetwork indicates whether the driver pods
+                  should use the host network namespace'
+                type: boolean
               image:
                 default: nvcr.io/nvidia/driver
                 description: NVIDIA Driver container image name
