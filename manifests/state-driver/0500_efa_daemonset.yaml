@@ -29,6 +29,13 @@ spec:
       nodeSelector:
         nvidia.com/gpu.deploy.efa-driver: "true"
         feature.node.kubernetes.io/kernel-version.full: {{ .Precompiled.KernelVersion | quote }} # EFA is ONLY precompiled
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: aws-efa-driver-ready
+                operator: DoesNotExist
       containers:
       - name: efa-installer
         image: {{ .EFA.ImagePath }}
