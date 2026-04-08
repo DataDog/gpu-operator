@@ -3,9 +3,12 @@ ARG BUILDER_IMAGE
 FROM ${BUILDER_IMAGE} AS builder
 
 ARG TARGETARCH
+ARG KUBECTL_VERSION=v1.34.5-dd.1
 
-RUN curl -o /usr/bin/kubectl -L "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${TARGETARCH}/kubectl";
-RUN chmod a+x /usr/bin/kubectl
+RUN curl -Lfs https://github.com/DataDog/kubernetes/releases/download/${KUBECTL_VERSION}/kubernetes-server-linux-${TARGETARCH}.tar.gz -O
+RUN tar -C /usr/local/bin/ --strip-components 3 --exclude '*.tar' --exclude '*.docker_tag' -xvzf kubernetes-server-linux-${TARGETARCH}.tar.gz kubernetes/server/bin/kubectl
+RUN chmod 755 /usr/local/bin/kubectl
+RUN go tool nm /usr/local/bin/kubectl | grep -E 'sig.FIPSOnly'
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -47,7 +50,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends kmod
 
 WORKDIR /
 COPY --from=builder /workspace/gpu-operator /usr/bin/
-COPY --from=builder /usr/bin/kubectl /usr/bin/kubectl
+COPY --from=builder /usr/local/bin/kubectl /usr/bin/kubectl
 COPY --from=builder /workspace/nvidia-validator /usr/bin/
 COPY --from=sample-getter /cuda-samples/vectorAdd /usr/bin/vectorAdd
 COPY --from=sample-getter /usr/local/cuda/compat /usr/local/cuda/compat
