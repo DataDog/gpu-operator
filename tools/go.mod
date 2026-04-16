@@ -2,6 +2,8 @@ module github.com/NVIDIA/gpu-operator/tools
 
 go 1.24.0
 
+toolchain go1.26.2
+
 require (
 	k8s.io/code-generator v0.32.3
 	sigs.k8s.io/controller-tools v0.17.2
