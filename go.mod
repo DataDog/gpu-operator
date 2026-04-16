@@ -2,6 +2,8 @@ module github.com/NVIDIA/gpu-operator
 
 go 1.24.0
 
+toolchain go1.26.2
+
 require (
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/NVIDIA/go-nvlib v0.7.1
