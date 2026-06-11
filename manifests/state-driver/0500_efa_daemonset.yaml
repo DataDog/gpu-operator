@@ -1,0 +1,98 @@
+{{- if and (.EFA) (.EFA.Enabled) }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: "{{ .Driver.AppName }}-efa"
+  namespace: {{ .Runtime.Namespace }}
+  labels:
+    app: "{{ .Driver.AppName }}-efa"
+    app.kubernetes.io/component: nvidia-driver
+    app.kubernetes.io/managed-by: gpu-operator
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: efa-driver
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 10%
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: efa-driver
+    spec:
+      hostNetwork: true
+      priorityClassName: {{ default "system-node-critical" .Driver.Spec.PriorityClassName }}
+      serviceAccountName: {{ .Driver.Name }}
+      tolerations:
+      - operator: Exists
+      nodeSelector:
+        nvidia.com/gpu.deploy.efa-driver: "true"
+        feature.node.kubernetes.io/kernel-version.full: {{ .Precompiled.KernelVersion | quote }} # EFA is ONLY precompiled
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: aws-efa-driver-ready
+                operator: DoesNotExist
+      containers:
+      - name: efa-installer
+        image: {{ .EFA.ImagePath }}
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsUser: 0
+          privileged: true
+        volumeMounts:
+        - name: lib-modules
+          mountPath: /lib/modules
+      - name: efa-nv-peermem-installer
+        image: {{ .EFA.NVPeermemImagePath }}
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsUser: 0
+          privileged: true
+        volumeMounts:
+        - name: lib-modules
+          mountPath: /lib/modules
+      - name: rdma-core-installer
+        # Image from RDMA_CORE_INSTALLER_IMAGE env var (set by chart)
+        image: {{ .EFA.InstallerImagePath }}
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsUser: 0
+          privileged: true
+        # needed to install rdma-core from host
+        volumeMounts:
+        - name: host-root
+          mountPath: /host
+        command:
+          - bash
+          - -c
+          - |
+            set -euo pipefail
+            cp /mnt/scripts/* /host/usr/local/bin &&
+            chroot /host /usr/local/bin/install-rdma-core.sh
+            echo "RDMA core installed"
+            sleep infinity
+        volumeMounts:
+        - name: host-root
+          mountPath: /host
+        - name: scripts
+          mountPath: /mnt/scripts
+      volumes:
+      - name: host-root
+        hostPath:
+          path: "/"
+      # needed to load modules from host
+      - name: lib-modules
+        hostPath:
+          path: /lib/modules
+      - name: scripts
+        configMap:
+          name: efa-installer-scripts
+          items:
+            - key: install-rdma-core.sh
+              path: install-rdma-core.sh
+              mode: 0755
+{{- end }}
