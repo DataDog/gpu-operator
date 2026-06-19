@@ -17,6 +17,7 @@ type EFADriver struct {
 
 const efaDriverStatusFile = "efa-driver-ready"
 const efaEnabledNodeLabel = "nodegroups.datadoghq.com/efa-enabled"
+const draNodeLabel = "managed-by-gpu-dra-plugin"
 
 func (e *EFADriver) validate() error {
 	if err := deleteStatusFile(outputDirFlag + "/" + efaDriverStatusFile); err != nil {
@@ -144,6 +145,17 @@ func (m *MIGPartition) shouldHaveMIGPartitioning() (bool, error) {
 	if m.ctx == nil {
 		m.ctx = context.Background()
 	}
+
+	// only verify MIG partitioning on Device Plugin-managed nodes
+	isDRA, err := isDRANode(m.ctx, m.kubeClient)
+	if err != nil {
+		return false, err
+	}
+	if isDRA {
+		log.Info("DRA node detected, skipping MIG partitioning validation")
+		return false, nil
+	}
+
 	// get node info to check if MIG partioning should be present on node
 	node, err := getNode(m.ctx, m.kubeClient)
 	if err != nil {
@@ -153,7 +165,6 @@ func (m *MIGPartition) shouldHaveMIGPartitioning() (bool, error) {
 	nodeLabels := node.GetLabels()
 	partitioning, present := nodeLabels[migPartitionNodeLabel]
 	return present && partitioning != "false", nil
-
 }
 
 func (m *MIGPartition) runValidation(silent bool) error {
@@ -165,4 +176,13 @@ func (m *MIGPartition) runValidation(silent bool) error {
 		return runCommandWithWait(command, args, sleepIntervalSecondsFlag, silent)
 	}
 	return runCommand(command, args, silent)
+}
+
+func isDRANode(ctx context.Context, kubeClient kubernetes.Interface) (bool, error) {
+	node, err := getNode(ctx, kubeClient)
+	if err != nil {
+		return false, fmt.Errorf("unable to fetch node %s to check for DRA: %w", nodeNameFlag, err)
+	}
+
+	return node.GetLabels()[draNodeLabel] == "true", nil
 }
