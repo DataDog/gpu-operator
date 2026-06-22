@@ -1203,16 +1203,28 @@ func (p *Plugin) validate() error {
 	// update k8s client for the plugin
 	p.setKubeClient(kubeClient)
 
-	err = p.validateGPUResource()
+	devicePluginShouldBeValidated := true
+	isDRA, err := isDRANode(p.ctx, p.kubeClient)
 	if err != nil {
 		return err
 	}
+	if isDRA {
+		log.Info("DRA node detected, skipping device plugin validation")
+		devicePluginShouldBeValidated = false
+	}
 
-	if withWorkloadFlag {
-		// workload test
-		err = p.runWorkload()
+	if devicePluginShouldBeValidated {
+		err = p.validateGPUResource()
 		if err != nil {
 			return err
+		}
+
+		if withWorkloadFlag {
+			// workload test
+			err = p.runWorkload()
+			if err != nil {
+				return err
+			}
 		}
 	}
 
