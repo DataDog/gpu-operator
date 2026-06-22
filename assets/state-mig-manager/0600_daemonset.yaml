@@ -16,6 +16,15 @@ spec:
     spec:
       nodeSelector:
         nvidia.com/gpu.deploy.mig-manager: "true"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: managed-by-gpu-dra-plugin
+                operator: NotIn
+                values:
+                - "true"
       tolerations:
         - key: nvidia.com/gpu
           operator: Exists
