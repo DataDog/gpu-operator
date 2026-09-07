@@ -5,6 +5,8 @@ metadata:
   name: "{{ .Driver.AppName }}-efa"
   namespace: {{ .Runtime.Namespace }}
   labels:
+    service: gpu-operator-efa
+    team: compute
     app: "{{ .Driver.AppName }}-efa"
     app.kubernetes.io/component: nvidia-driver
     app.kubernetes.io/managed-by: gpu-operator
@@ -19,6 +21,8 @@ spec:
   template:
     metadata:
       labels:
+        service: gpu-operator-efa
+        team: compute
         app.kubernetes.io/component: efa-driver
     spec:
       hostNetwork: true

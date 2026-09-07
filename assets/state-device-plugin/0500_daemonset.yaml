@@ -3,6 +3,8 @@ kind: DaemonSet
 metadata:
   labels:
     app: nvidia-device-plugin-daemonset
+    service: gpu-operator-device-plugin
+    team: compute
   name: nvidia-device-plugin-daemonset
   namespace: "FILLED BY THE OPERATOR"
   annotations:
@@ -14,7 +16,11 @@ spec:
   template:
     metadata:
       labels:
+        service: gpu-operator-device-plugin
+        team: compute
         app: nvidia-device-plugin-daemonset
+      annotations:
+        ad.datadoghq.com/nvidia-device-plugin.logs: '[{"source": "gpu-operator","service": "gpu-operator-device-plugin"}]'
     spec:
       nodeSelector:
         nvidia.com/gpu.deploy.device-plugin: "true"
