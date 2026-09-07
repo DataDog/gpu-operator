@@ -6,6 +6,8 @@ metadata:
   labels:
     app: nvidia-operator-validator
     app.kubernetes.io/part-of: gpu-operator
+    service: gpu-operator-validator
+    team: compute
 spec:
   selector:
     matchLabels:
@@ -14,8 +16,17 @@ spec:
   template:
     metadata:
       labels:
+        service: gpu-operator-validator
+        team: compute
         app: nvidia-operator-validator
         app.kubernetes.io/part-of: gpu-operator
+      annotations:
+        ad.datadoghq.com/driver-validation.logs: '[{"source": "gpu-operator","service": "gpu-operator-validator"}]'
+        ad.datadoghq.com/toolkit-validation.logs: '[{"source": "gpu-operator","service": "gpu-operator-validator"}]'
+        ad.datadoghq.com/mig-partition-validation.logs: '[{"source": "gpu-operator","service": "gpu-operator-validator"}]'
+        ad.datadoghq.com/cuda-validation.logs: '[{"source": "gpu-operator","service": "gpu-operator-validator"}]'
+        ad.datadoghq.com/plugin-validation.logs: '[{"source": "gpu-operator","service": "gpu-operator-validator"}]'
+        ad.datadoghq.com/efa-driver-validation.logs: '[{"source": "gpu-operator","service": "gpu-operator-validator"}]'
     spec:
       nodeSelector:
         nvidia.com/gpu.deploy.operator-validator: "true"
