@@ -6,6 +6,8 @@ metadata:
   labels:
     app: gpu-feature-discovery
     app.kubernetes.io/part-of: nvidia-gpu
+    service: gpu-operator-gfd
+    team: compute
 spec:
   selector:
     matchLabels:
@@ -14,8 +16,12 @@ spec:
   template:
     metadata:
       labels:
+        service: gpu-operator-gfd
+        team: compute
         app: gpu-feature-discovery
         app.kubernetes.io/part-of: nvidia-gpu
+      annotations:
+        ad.datadoghq.com/gpu-feature-discovery.logs: '[{"source": "gpu-operator","service": "gpu-operator-gfd"}]'
     spec:
       nodeSelector:
         nvidia.com/gpu.deploy.gpu-feature-discovery: "true"
