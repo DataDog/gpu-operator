@@ -93,7 +93,7 @@ type driverRenderData struct {
 	GDS               *gdsDriverSpec
 	GPUDirectRDMA     *nvidiav1alpha1.GPUDirectRDMASpec
 	GDRCopy           *gdrcopyDriverSpec
-	EFA *efaDriverSpec
+	EFA               *efaDriverSpec
 	Runtime           *driverRuntimeSpec
 	Openshift         *openshiftSpec
 	Precompiled       *precompiledSpec
@@ -289,7 +289,10 @@ func (s *stateDriver) getManifestObjects(ctx context.Context, cr *nvidiav1alpha1
 		return []*unstructured.Unstructured{}, nil
 	}
 
-	openshiftDTKMap := clusterInfo.GetOpenshiftDriverToolkitImages()
+	var openshiftDTKMap map[string]string
+	if runtimeSpec.OpenshiftDriverToolkitEnabled {
+		openshiftDTKMap = clusterInfo.GetOpenshiftDriverToolkitImages()
+	}
 
 	// Render kubernetes objects for each node pool.
 	// We deploy one DaemonSet per node pool.
