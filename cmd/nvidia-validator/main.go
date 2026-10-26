@@ -396,6 +396,7 @@ func main() {
 			Sources:     cli.EnvVars("DRIVER_VALIDATION_SKIP_GPU_INIT"),
 		},
 	}
+	c.Flags = append(c.Flags, datadogFlags()...)
 
 	// Log version info
 	log.Infof("version: %s", c.Version)
@@ -1361,6 +1362,7 @@ func (p *Plugin) runWorkload() error {
 		runtimeClass := os.Getenv(validatorRuntimeClassEnvName)
 		pod.Spec.RuntimeClassName = &runtimeClass
 	}
+	applyWorkloadMetadata(pod)
 
 	validatorDaemonset, err := p.kubeClient.AppsV1().DaemonSets(namespaceFlag).Get(ctx, "nvidia-operator-validator", meta_v1.GetOptions{})
 	if err != nil {
@@ -1625,6 +1627,7 @@ func (c *CUDA) runWorkload() error {
 		runtimeClass := os.Getenv(validatorRuntimeClassEnvName)
 		pod.Spec.RuntimeClassName = &runtimeClass
 	}
+	applyWorkloadMetadata(pod)
 
 	validatorDaemonset, err := c.kubeClient.AppsV1().DaemonSets(namespaceFlag).Get(ctx, "nvidia-operator-validator", meta_v1.GetOptions{})
 	if err != nil {
