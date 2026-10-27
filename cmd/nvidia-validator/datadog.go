@@ -2,12 +2,90 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"maps"
 
 	log "github.com/sirupsen/logrus"
+	cli "github.com/urfave/cli/v3"
+	corev1 "k8s.io/api/core/v1"
+	apivalidation "k8s.io/apimachinery/pkg/api/validation"
+	metav1validation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
+
+// validatorWorkloadLabelsEnvName indicates env name for extra labels (JSON object) applied to validation workload pods
+const validatorWorkloadLabelsEnvName = "VALIDATOR_WORKLOAD_LABELS"
+
+// validatorWorkloadAnnotationsEnvName indicates env name for extra annotations (JSON object) applied to validation workload pods
+const validatorWorkloadAnnotationsEnvName = "VALIDATOR_WORKLOAD_ANNOTATIONS"
+
+// extra labels and annotations applied to validation workload pods, parsed at startup
+var (
+	workloadLabelsFlag      map[string]string
+	workloadAnnotationsFlag map[string]string
+)
+
+// datadogFlags returns the Datadog specific validator flags
+func datadogFlags() []cli.Flag {
+	return []cli.Flag{
+		&cli.StringFlag{
+			Name:  "workload-labels",
+			Usage: "extra labels (JSON object) applied to validation workload pods",
+			Validator: func(value string) error {
+				return parseWorkloadMetadata(value, &workloadLabelsFlag, func(m map[string]string) field.ErrorList {
+					return metav1validation.ValidateLabels(m, field.NewPath("labels"))
+				})
+			},
+			Sources: cli.EnvVars(validatorWorkloadLabelsEnvName),
+		},
+		&cli.StringFlag{
+			Name:  "workload-annotations",
+			Usage: "extra annotations (JSON object) applied to validation workload pods",
+			Validator: func(value string) error {
+				return parseWorkloadMetadata(value, &workloadAnnotationsFlag, func(m map[string]string) field.ErrorList {
+					return apivalidation.ValidateAnnotations(m, field.NewPath("annotations"))
+				})
+			},
+			Sources: cli.EnvVars(validatorWorkloadAnnotationsEnvName),
+		},
+	}
+}
+
+// parseWorkloadMetadata decodes the JSON object of string values into dest and validates it.
+func parseWorkloadMetadata(value string, dest *map[string]string, validate func(map[string]string) field.ErrorList) error {
+	if value == "" {
+		return nil
+	}
+
+	var m map[string]string
+	if err := json.Unmarshal([]byte(value), &m); err != nil {
+		return fmt.Errorf("invalid JSON %q: %w", value, err)
+	}
+	if err := validate(m).ToAggregate(); err != nil {
+		return err
+	}
+	*dest = m
+	return nil
+}
+
+// applyWorkloadMetadata adds the extra labels and annotations to the given validation workload pod.
+func applyWorkloadMetadata(pod *corev1.Pod) {
+	if len(workloadLabelsFlag) > 0 {
+		if pod.Labels == nil {
+			pod.Labels = map[string]string{}
+		}
+		maps.Copy(pod.Labels, workloadLabelsFlag)
+	}
+	if len(workloadAnnotationsFlag) > 0 {
+		if pod.Annotations == nil {
+			pod.Annotations = map[string]string{}
+		}
+		maps.Copy(pod.Annotations, workloadAnnotationsFlag)
+	}
+}
 
 // EFADriver component
 type EFADriver struct {
